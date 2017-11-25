@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,6 +11,8 @@ namespace IO
 {
 	internal static class Program
 	{
+		//TODO Wnioski do każdego zadania
+
 		private static void Main()
 		{
 			Zad1();
@@ -16,6 +20,9 @@ namespace IO
 			Zad3();
 			Zad4();
 			Zad5(1024, 64);
+			Zad6();
+			Zad7();
+			Zad8();
 
 			Console.ReadKey();
 		}
@@ -214,7 +221,7 @@ namespace IO
 
 		private static object Lock { get; } = new object();
 
-		private static WaitHandle[] WaitHandle { get; set; }
+		private static WaitHandle[] WaitHandle5 { get; set; }
 
 		private static int Suma { get; set; }
 
@@ -234,13 +241,13 @@ namespace IO
 			for (var i = 0; i < num; i++)
 				list.Add(new Random().Next(0, 10));
 
-			WaitHandle = new WaitHandle[num / fragment];
+			WaitHandle5 = new WaitHandle[num / fragment];
 
 			var ile = 0;
 			while (ile < num / fragment)
 			{
-				WaitHandle[ile] = new AutoResetEvent(false);
-				ThreadPool.QueueUserWorkItem(Zad5CallBack, new object[] {list, fragment, ile, WaitHandle[ile]});
+				WaitHandle5[ile] = new AutoResetEvent(false);
+				ThreadPool.QueueUserWorkItem(Zad5CallBack, new object[] {list, fragment, ile, WaitHandle5[ile]});
 
 				lock (Lock)
 				{
@@ -248,7 +255,7 @@ namespace IO
 				}
 			}
 
-			System.Threading.WaitHandle.WaitAll(WaitHandle);
+			WaitHandle.WaitAll(WaitHandle5);
 			Console.WriteLine($"Suma jest rowna = {Suma}");
 		}
 
@@ -266,5 +273,164 @@ namespace IO
 		}
 
 		#endregion Zad5
+
+		#region Zad6
+
+		private static void Zad6()
+		{
+			var buffer = new byte[1024];
+
+			var strm = new FileStream(Path.Combine(Environment.CurrentDirectory, "text.txt"), FileMode.Open);
+
+			//var result = strm.BeginRead(Buffer, 0, Buffer.Length, new AsyncCallback(Zad6CallBack), strm); //To jest to samo co poniżej
+			strm.BeginRead(buffer, 0, buffer.Length, Zad6CallBack, strm);
+		}
+
+		private static void Zad6CallBack(IAsyncResult result)
+		{
+			var buffer = new byte[1024];
+
+			var strm = (FileStream) result.AsyncState;
+
+			var numBytes = strm.EndRead(result);
+
+			strm.Close();
+
+			Console.WriteLine($"Read {numBytes} Bytes.");
+			//Console.WriteLine(BitConverter.ToString(buffer));
+			Console.WriteLine(Encoding.UTF8.GetString(buffer));
+		}
+
+		#endregion Zad6
+
+		#region Zad7
+
+		private static void Zad7()
+		{
+			var buffer = new byte[1024];
+
+			var strm = new FileStream(Path.Combine(Environment.CurrentDirectory, "text.txt"), FileMode.Open);
+
+			var result = strm.BeginRead(buffer, 0, buffer.Length, null, null);
+
+			Thread.Sleep(200);
+
+			//Tutaj są wykonywane rownolegle obliczenia
+			//Możemy czytać z 2 osobnych dysków
+			//FileStream strm2 = new FileStream(filename2, FileMode.Open);
+			//IAsyncResult result2 = strm2.BeginRead(buffer, 0, buffer.Length, null, strm2);
+
+			var numBytes = strm.EndRead(result);
+
+			strm.Close();
+
+			Console.WriteLine($"Read {numBytes} Bytes.");
+			//Console.WriteLine(BitConverter.ToString(buffer));
+			Console.WriteLine(Encoding.ASCII.GetString(buffer));
+		}
+
+		#endregion Zad7
+
+		#region Zad8
+
+		private delegate ulong DelegateType(object arg);
+
+		private static void Zad8()
+		{
+			const int ktoryWyraz = 20;
+
+			var metoda = new DelegateType[]
+			{
+				Zad8Silnia_I,
+				Zad8Silnia_R,
+				Zad8Fib_I,
+				Zad8Fib_R
+			};
+
+			var result =
+			(
+				from t
+				in metoda
+				let m = t
+				let time = DateTime.Now
+				let wynik = m.EndInvoke(m.BeginInvoke(ktoryWyraz, null, null))
+				let span = DateTime.Now - time
+				select
+				new Tuple<string, ulong, DateTime, TimeSpan>
+				(
+					t.Method.Name
+					, wynik
+					, time
+					, span
+				)
+			).ToList();
+
+			/*	Orginał tego powyżej
+			var result = new List<Tuple<string, ulong, DateTime, TimeSpan>>();
+			foreach (var t in metoda)
+			{
+				var m = t;
+
+				var time = DateTime.Now;
+				var wynik = (ulong) m.EndInvoke(m.BeginInvoke(ktoryWyraz, null, null));
+				var span = DateTime.Now - time;
+
+				result.Add(new Tuple<string, ulong, DateTime, TimeSpan>(t.Method.Name, wynik, time, span));
+			}
+			// */
+
+			var sorted = result.OrderByDescending(r => r.Item2).ToList();
+
+			foreach (var s in sorted)
+				Console.WriteLine(
+					"Nazwa fukcji wywołanej:\t" + s.Item1 + Environment.NewLine
+					+ "Czas rozpoczęcia:\t" + s.Item3 + Environment.NewLine
+					+ "Czas wykonania:\t\t" + s.Item4 + Environment.NewLine
+					+ "Wynik funkcji:\t\t" + s.Item2 + Environment.NewLine);
+		}
+
+		private static ulong Zad8Fib_I(object arg)
+		{
+			ulong a = 0;
+			ulong b = 1;
+
+			var ile = (ulong) arg;
+
+			for (ulong i = 0; i < ile; i++)
+			{
+				var temp = a;
+				a = b;
+				b = temp + b;
+			}
+
+			return a;
+		}
+
+		private static ulong Zad8Fib_R(object arg)
+		{
+			var n = (ulong) arg;
+			if (n < 3)
+				return 1;
+			return Zad8Fib_R(n - 2) + Zad8Fib_R(n - 1);
+		}
+
+		private static ulong Zad8Silnia_I(object arg)
+		{
+			ulong result = 1;
+			for (ulong i = 1; i <= (ulong) arg; i++)
+				result *= i;
+			return result;
+		}
+
+		private static ulong Zad8Silnia_R(object arg)
+		{
+			var i = (ulong) arg;
+
+			if (i < 1)
+				return 1;
+			return i * Zad8Silnia_R(i - 1);
+		}
+
+		#endregion Zad8
 	}
 }
