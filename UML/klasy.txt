@@ -1,0 +1,33 @@
+Taksówkarz
+
+0. Zarejestrowany klient serwisu jest identyfikowany przez nastêpuj¹ce dane:
+	-kod zni¿kowy
+	-imiê
+	-nazwisko
+	-numer telefonu
+1. Niezarejestrowany klient serwisu jest identyfikowany przez nastêpuj¹ce dane:
+	-numer telefonu
+	-automatycznie wygenerowany identyfikator
+2. Serwis zatrudnia taksówkarzy, którzy s¹ opisywani przez nastêpuj¹ce dane:
+	-imiê
+	-nazwisko
+	-NIP
+	-PESEL
+3. Ka¿demu taksówkarzowi przypisywana jest taksówka, która jest identyfikowana przez:
+	-numer rejestracji
+	-model samochodu
+	-numer boczny
+4. Miasto podzielone jest na strefy o okreœlonej nazwie, dla ka¿dej strefy obowi¹zuje inna op³ata za przejazd
+5. Strefy podzielone s¹ na rejony (Agregacja pe³na)
+	-rejon ma swoj¹ nazwê
+6. Kierowca mo¿e realizowaæ na raz jeden kurs
+	-w kursie uczestniczy jeden klient
+	-kurs ma listê odleg³oœci przejechanych w poszczególnych strefach
+	-istnieje mo¿liwoœæ obliczania op³aty za kurs
+	-kurs przechowuje informacje o rejonie startowym i koñcowym
+7. Istnieje mo¿liwoœæ z³o¿enia zamówienia taksówki
+	-zamówienie sk³ada zarejestrowany klient
+	-zamówienie jest "do rejonu"
+	-parametrem zamówienia jest konkretny adres w postaci tekstowej
+	-parametrem zamówienia jest data i godzina z³o¿enia zamówienia
+8. Zamówienia s¹ przechowywane i istnieje mo¿liwoœæ przejêcia zamówienia przez taksówkarza
